@@ -1,1 +1,119 @@
+NAME: GISUBIZO Sandrine 
+REG NUMBER :223020183 
+E-COMMERCE ORDER PROCESSING  SYSTEM 
+E-Commerce Order Processing is system that used to Build a checkout system where orders hold dynamic arrays of order‐items, and different order types calculate totals polymorphically. The code consists of the Product and Order Item structs (data containers),An abstract base class Order with a virtual function, Two subclasses: Online Order and InStoreOrder (inherit Order);A demoOrders() function to test the system;A main() function that calls demoOrders().
+#include <iostream> ‘’Include functionality for input/output streams that is used to input and output to console’’
+#include :” string value library because it work with string number example like title….’’
+using namespace std; ” This line allows you to use names from the std namespace (like string, cout, .. ) without needing to prefix them with std:: , for example std::cout” Product Structure Definition
+struct Product {
+char sku[10]: A character array to store the Stock Keeping Unit (SKU), limited to 9 characters plus null terminator
+char name[30]: A character array for the product name, limited to 29 characters plus null terminator
+float price: A floating-point number to store the product's price
+};
+struct OrderItem {: OrderItem Structure
+   Product* prod;: A pointer to a Product object, establishing a relationship between OrderItem and Product
+   int qty;: An integer representing the quantity of this product in the order
+};
+class Order { This begins the definition of the abstract base class Order, which will serve as the foundation for different types of orders.
+protected: This encapsulation allows derived classes to access these members while maintaining data integrity.
+ OrderItem* items; A pointer to OrderItem that will be used to create a dynamic array of order items. This allows each order to have a variable number of items.
+ int itemCount; Stores the number of items in this order, used for array bounds checking and iteration
+ int orderId; A unique identifier for each order
+public:
+    Order(int id, int count) : orderId(id), itemCount(count) {: The constructor takes two parameters: id (order ID) and count (number of items). The initialization list : orderId(id), itemCount(count) directly initializes these member variables, which is more efficient than assignment within the constructor body.
+ public: These members are accessible from anywhere in the program.
+ Constructor Definition The constructor takes two parameters: id (order ID) and count (number of items). The initialization list : orderId(id), itemCount(count) directly initializes these member variables, which is more efficient than assignment within the constructor body.
+ items = new OrderItem[itemCount]; Dynamically allocates an array of OrderItem objects on the heap. The size is determined by itemCount. This dynamic allocation allows each order to have exactly the number of items it needs.
+    }
+virtual ~Order() {// The destructor deallocates the dynamically allocated items array using delete[], preventing memory leaks.”
+    delete[] items;
+}
+void setItem(int index, Product* p, int q) {: sets the product and quantity for a specific item in the order
+if (index < itemCount) {:”” Takes an index, product pointer, and quantity as parameters
+ items[index].prod = p;” prevent array access violations”
+ items[index].qty = q;” Sets both the product pointer and quantity for the specified array element”    }}
+int getOrderId() const {“ simple getter function that returns the order ID,The const keyword indicates this function doesn't modify the object's state, making it safe to call on const Order objects.”
+    return orderId; “returning order”  }
+virtual float calcTotal() = 0;“it declares calcTotal() as a pure virtual function with zero and this makes Order an abstract class that cannot be instantiated directly and any derived class must implement this function, ensuring all order types can calculate their total cost”
+class OnlineOrder : public Order {“ OnlineOrder inherits publicly from Order, meaning it has access to all public and protected members of Order. It adds a private member shippingCost to handle shipping fees specific to online orders”
+   float shippingCost;
+public:
+    OnlineOrder(int id, int count, float shipping) : Order(id, count), shippingCost(shipping) {}
+ “ The constructor takes three parameters and uses an initialization list to call the base class constructor Order(id, count) and initialize shipping Cost and this ensures proper initialization of both base and derived class members”
+float calcTotal() override {“ override keyword explicitly indicates this function overrides a virtual function, helping catch errors”
+  float total = 0;” Initializes a local total variable to accumulate the cost”
+
+    for (int i = 0; i < itemCount; ++i) {
+ total += items[i].prod->price * items[i].qty;” Loops through all items, multiplying each product's price by its quantity”}
+    return total + shippingCost;” Returns the subtotal plus shipping cost”
+}
+class InStoreOrder : public Order {“ Similar to OnlineOrder, this class inherits from Order but adds a discount member to represent percentage discounts available for in-store purchases
+ float discount;
+public:
+    InStoreOrder(int id, int count, float disc) : Order(id, count), discount(disc) {}
+ “Follows the same pattern as OnlineOrder, initializing the base class and the discount member”
+float calcTotal() override {“ Implements the calculation for in-store orders”
+    float total = 0;
+    for (int i = 0; i < itemCount; ++i) {
+•	        total += items[i].prod->price * items[i].qty;” Calculates the subtotal the same way as OnlineOrder”    }
+    return total * (1 - discount);” Applies the discount by multiplying by (1 - discount)”
+}
+void addOrder(Order**& allOrders, int& size, Order* newOrder) {“ A reference to a pointer to pointer to Order and allows the function to modify the original pointer array then reference to the size variable, allowing modification and the new order to add
+Order** temp = new Order*[size + 1];” Creates a new array of Order pointers that's one element larger than the current array”
+    for (int i = 0; i < size; ++i) {
+    temp[i] = allOrders[i];” Copies all existing Order pointers from the old array to the new array”}
+    temp[size] = newOrder;” Adds the new order pointer to the end of the new array”
+    delete[] allOrders;” Deallocates the old array to prevent memory leaks”
+ allOrders = temp;
+ size++;” original pointer and size to point to the new array and reflect the new size”}
+void removeOrder(Order**& allOrders, int& size, int orderId) {“ Searches through the array to find the order with the matching ID”
+    int index = -1;” indicating not found
+    for (int i = 0; i < size; ++i) {“ Loops through all orders”
+        if (allOrders[i]->getOrderId() == orderId) {
+index = i;” When found, stores the index and breaks out of the loop“
+ break;”terminate”
+     } }
+if (index != -1) {“ Check if Found  when index is not -1”
+    delete allOrders[index];” Deallocates the Order object itself, preventing memory leaks”
+    for (int i = index; i < size - 1; ++i) {“ Shifts all elements after the removed element one position to the left, effectively removing the gap”
+   allOrders[i] = allOrders[i + 1];” Shifts all elements after the removed element one position to the left”     }
+    size--;” Decrements the size”
+    Order** temp = new Order*[size];
+    for (int i = 0; i < size; ++i) {
+        temp[i] = allOrders[i];” Creates a new smaller array and copies the remaining elements, then updates the pointer reference”
+    }
+    delete[] allOrders;
+    allOrders = temp;”then delete all order”
+}
+Main Function
+int main() {
+ Product p1 = {"SKU01", "Laptop", 120000};” Creates aneProduct objects using aggregate initialization”
+ Product p2 = {"SKU02", "Mouse", 2500};” Creates aneProduct objects using aggregate initialization”
+Dynamic Array Initialization
+Order** allOrders = nullptr;” Initializes the dynamic array  and allOrders starts as nullptr”
+int orderCount = 0;” tracks the number of orders”
+OnlineOrder* online = new OnlineOrder(101, 2, 15.00);” Dynamically allocates an OnlineOrder with ID 101, 2 items, and $1500 shipping cost”
+online->setItem(0, &p1, 1);” using address of p1”
+online->setItem(1, &p2, 2);” using address of p2”
+addOrder(allOrders, orderCount, online);”Calls the helper function to add this order to the dynamic array”
+InStoreOrder* instore = new InStoreOrder(102, 2, 0.10);” Create InStoreOrder”
+instore->setItem(0, &p1, 1);
+instore->setItem(1, &p2, 1);
+addOrder(allOrders, orderCount, instore);
+“Similar process for an in-store order with ID 102, 2 items, and 10% discount (0.10)”
+for (int i = 0; i < orderCount; ++i) {“ Iterates through all orders and displays their ID and calculated total. This demonstrates polymorphism 
+    cout << "Order ID: " << allOrders[i]->getOrderId()
+         << ", Total: $" << allOrders[i]->calcTotal() << endl;” the same calcTotal() call works differently for OnlineOrder and InStoreOrder objects”}
+Order Removal and Cleanup
+removeOrder(allOrders, orderCount, 101);
+cout << "\nAfter removing Order 101:\n";
+for (int i = 0; i < orderCount; ++i) {
+    cout << "Order ID: " << allOrders[i]->getOrderId()
+         << ", Total: $" << allOrders[i]->calcTotal() << endl;
+}” Remove and Display Removes order 101 and displays the remaining orders to demonstrate the removal functionality”
+for (int i = 0; i < orderCount; ++i) {
+    delete allOrders[i];
+}
+delete[] allOrders; “Properly deallocates all remaining Order objects and the array itself to prevent memory leaks. Returns 0 to indicate successful program execution”
+return 0;”end of program”
 
